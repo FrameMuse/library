@@ -16,10 +16,16 @@ class api extends Sneekers.domestic.api {
 }
 
 class page extends Sneekers.local.pages {
-    constructor(config) {
-        this.__addPage(config);
+    constructor(page) {
+        this.__addPage(page);
     }
 }
+
+// Setup
+
+Sneekers.setup(function() {
+    //cache.clear();
+});
 
 // Pages
 

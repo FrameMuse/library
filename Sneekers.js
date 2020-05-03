@@ -1,3 +1,5 @@
+"use strict";
+
 class ajax {
     static construct() {
         this.version = "v1";
@@ -182,13 +184,6 @@ class ProgressBar {
     static construct() {
         this.progress = new Deferred();
         this.rail = 0;
-        this.timming([
-            { time: 500, width: 30 },
-            { time: 350, width: 45 },
-            { time: 450, width: 55 },
-            { time: 250, width: 60 },
-            { time: 750, width: 80 },
-        ]);
     }
     static async start() {
         this.progress.refresh();
@@ -288,38 +283,86 @@ class html {
     }
 }
 
-class popup {
-    static construct() {
+class PageCache {
+    constructor(url, success) {
+        this.page = url.split("/")[1];
+        this.localCache = this.getCache(this.page);
+
+        if (PageCache.CachePages.includes(this.page)) {
+
+            if (this.localCache == false) {
+                (async () => {
+                    await page.support.pageLoading.promise;
+                    localStorage.setItem(this.page, JSON.stringify({
+                        content: this.cache(),
+                        date: new Date(),
+                    })); 
+                })();
+                return false;
+            } else {
+                success(this.localCache);
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    cache() {
+        var contrainer = $(page.support.fickle);
+        return contrainer.html();
+    }
+
+    getCache(page) {
+        var raw_data = localStorage.getItem(page);
+        if (raw_data == null) return false;
+
+        var data = JSON.parse(raw_data);
+        var content = data.content;
+
+        return content;
+    }
+
+    static clear() {
+        for (let i = 0; i < PageCache.CachePages.length; i++) {
+            const element = PageCache.CachePages[i];
+            localStorage.removeItem(element);
+        }
+    }
+}
+
+Sneekers.local.popup = class {
+    constructor() {
         this.on = {};
         this.tmp = {};
         this.opened = new Deferred();
         this.closed = new Deferred();
     }
 
-    static tend(option) {
+    tend(option) {
         var element = ".popup-window__" + option;
         return $(element);
     }
 
-    static wEdit(options = {}) {
+    wEdit(options = {}) {
         for (var option in options) {
             this.tend(option).html(options[option]);
         }
     }
 
-    static fadeIn(object = ".popup-window") {
+    fadeIn(object = ".popup-window") {
         $(".popup").removeAttr("hidden");
         setTimeout(() => {
             $(object).removeClass("scale-out scale-in").addClass("scale-in");
         }, 50);
     }
 
-    static fadeOut() {
+    fadeOut() {
         $(".popup").find("> *:not(.popup__cover)").removeClass("scale-out scale-in").addClass("scale-out");
         setTimeout(() => $(".popup").attr("hidden", ""), 200);
     }
 
-    static open($window, options = {}) {
+    open($window, options = {}) {
         // Resoling the the Popup Opened promise
         this.opened.resolve();
         // Fetching
@@ -413,7 +456,7 @@ class ScrollInspector {
     }
 }
 
-class features_paging {
+Sneekers.local.pages = class {
     constructor() {
         // Begin
         this.pages = {};
@@ -456,7 +499,7 @@ class features_paging {
             } else {
                 history.pushState({ href: url, data: result }, "", url);
             }
-            if (hashAction) this.save_hash(hashAction); else this.save_hash();
+            this.save_hash(hashAction);
             this.final(result, url);
         });
         return this.pageLoading;
@@ -554,10 +597,6 @@ class features_paging {
         });
     }
 
-    clear_hash() {
-        history.replaceState(history.state, "", window.location.href.split('#')[0]);
-    }
-
     notify(signal, message) {
         var singals = {
             error: 0,
@@ -601,15 +640,21 @@ class features_paging {
         })
     }
 
-    save_hash(hash = false) {
+    save_hash(hash) {
         this.hash = hash ? hash : window.location.hash.split("!");
         this.clear_hash();
+    }
+
+    clear_hash() {
+        history.replaceState(history.state, "", window.location.href.split('#')[0]);
     }
 
     context(object) {
         object.apply(this);
     }
 }
+
+
 
 // Midifizing Prototypes
 
