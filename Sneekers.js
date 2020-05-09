@@ -1,49 +1,83 @@
 "use strict";
 
 class ajax {
-    static construct() {
-        this.version = "v1";
-        this.host = "https://standoffspin.ru";
-        this.path = host + "/api/" + version;
-        this.token = $('meta[name="csrf-token"]').attr('content');
-        this.dataType = "json";
-        this.dynamic = false;
-        this.cache = false;
+    constructor() {
+        ajax.version = "v1";
+        ajax.host = "https://standoffspin.ru";
+        ajax.path = host + "/api/" + version;
+        ajax.token = $('meta[name="csrf-token"]').attr('content');
+        ajax.dataType = "json";
+        ajax.dynamic = false;
+        ajax.cache = false;
+        ajax.statusCode = {};
     }
 
     static request(method, url, params = {}) {
-        this.construct();
         $.ajax({
-            url: this.url(url), // Formated and Joined URL
+            url: ajax.url(url), // Formated and Joined URL
             method: method,
             headers: {
-                'X-CSRF-TOKEN': this.token,
-                "DYNAMIC-REQUEST": this.dynamic,
+                'X-CSRF-TOKEN': ajax.token,
+                "DYNAMIC-REQUEST": ajax.dynamic,
             },
-            cache: this.cache,
-            dataType: this.dataType,
+            cache: ajax.cache,
+            dataType: ajax.dataType,
             data: $.param(params),
-            success: this.success,
-            error: this.error,
+            success: ajax.success,
+            error: ajax.error,
+            statusCode: ajax.statusCode,
         });
     }
 
     static config(data) {
-        
+        // Create new Ajax
+        new ajax();
+        // Configuring this Ajax
+        ajax.version = defined(data.version) ? data.version : ajax.version;
+        ajax.host = defined(data.host) ? data.host : ajax.host;
+        ajax.path = defined(data.path) ? data.path : ajax.path;
+        ajax.token = defined(data.token) ? data.token : ajax.token;
+        ajax.dataType = defined(data.dataType) ? data.dataType : ajax.dataType;
+        ajax.dynamic = defined(data.dynamic) ? data.dynamic : ajax.dynamic;
+        ajax.cache = defined(data.cache) ? data.cache : ajax.cache;
+        ajax.statusCode = defined(data.statusCode) ? data.statusCode : ajax.statusCode;
     }
 
     static url(path) {
-        return this.path + path;
+        return ajax.path + path;
     }
 }
 
 class api extends ajax {
-    static post(url, params = {}, success = function () { }) {
-        this.request("POST", url, params, success);
+    static post(argument1, argument2) {
+        this.commit(argument1, argument2, "POST");
     }
 
-    static get(url, params = {}, success = function () { }) {
-        this.request("GET", url, params, success);
+    static get(argument1, argument2) {
+        this.commit(argument1, argument2, "GET");
+    }
+
+    static commit(argument1, argument2, type) {
+        // Create new Ajax
+        new ajax();
+        // Overload Function
+        switch (typeof argument1) {
+            case "function":
+                this.request(type, this.url, this.message, argument1);
+                break;
+        
+            case "string":
+                this.request(type, argument1, {}, argument2);
+                break;
+        }
+        delete this.data;
+    }
+
+    static send(url, message) {
+        this.data = {
+            url: url,
+            message: message,
+        }
     }
 }
 
@@ -187,6 +221,7 @@ class ProgressBar {
     }
     static async start() {
         this.progress.refresh();
+        
         $(".load-indicator").css({ opacity: 1 });
         $(".load-indicator__fill").css({ width: 15 + "%" });
         $("body, button, input, a").css({ cursor: "wait" });
@@ -456,27 +491,29 @@ class ScrollInspector {
     }
 }
 
-Sneekers.local.pages = class {
+Sneekers.local.pages = class extends ajax {
     constructor() {
         // Begin
         this.pages = {};
         this.errors = {};
-        this.fickle = ".ajax-fickle";
-        this.DeviceType = "desktop";
         this.ScrollInspector = {};
         this.actionOnLoaded = [];
+
+        this.fickle = ".ajax-fickle";
+        this.DeviceType = "desktop";
         this.AbleScrollDown = true;
-        this.pageLoading = new Deferred();
-        this.onPageLoaded = () => { };
+        this.currentPage = {
+            deferred: new Deferred(),
+            url: "",
+        };
 
         this.refresh();
 
         window.onpopstate = (event) => {
-            this.__load(event.state.href, event.state.data);
+            this.__load(vent.state.href, event.state.data);
         }
 
         // Events
-        $("body").append(`<div class="notifier"><div class="notifier__message"></div><span class="notifier__signal"></span></div>`);
         $(document).on("click", "a.ajax-link[href]", (e) => {
             e.preventDefault();
             // Progress
@@ -485,6 +522,7 @@ Sneekers.local.pages = class {
             this.pageLoading.refresh();
             var href = $(e.currentTarget).attr("href").split("#!");
             if (href != null) {
+                this.currentPage.url = href[0].split("/");
                 this.load(href[0], href[1]);
             } else console.error("The link attr is empty");
         });
@@ -492,22 +530,31 @@ Sneekers.local.pages = class {
 
     load(url, hashAction = false) {
         ProgressBar.start();
-        this.dynamic_request(url, (result) => {
+        // Configure ajax
+        ajax.config({
+            dataType: "html",
+            dynamic: true,
+            error: (error) => {
+                this.currentPage.deferred.reject();
+                ProgressBar.end();
+                console.warn("Page Loading Error:", error);
+            },
+            statusCode: this.errors[this.currentPage.url],
+        });
+        // Make a ajax request
+        ajax.request(url, success => {
             // Histoty Push
             if (history.state == null) {
-                history.replaceState({ href: url, data: result }, "", url);
+                history.replaceState({ href: url, data: success }, "", url);
             } else {
-                history.pushState({ href: url, data: result }, "", url);
+                history.pushState({ href: url, data: success }, "", url);
             }
+            // Save Hash
             this.save_hash(hashAction);
-            this.final(result, url);
+            // 
+            this.active_page = url;
+            $(this.fickle).html(success);
         });
-        return this.pageLoading;
-    }
-
-    __load(url, result) {
-        ProgressBar.start();
-        this.final(result, url);
         return this.pageLoading;
     }
 
@@ -515,46 +562,12 @@ Sneekers.local.pages = class {
         this.load(window.location.pathname);
     }
 
-    dynamic_request(url, $success) {
-        $.ajax({
-            url: url,
-            headers: {
-                "DYNAMIC-REQUEST": true,
-            },
-            dataType: 'text',
-            cache: false,
-            success: $success,
-            error: (error) => {
-                this.pageLoading.reject();
-                ProgressBar.end();
-                console.warn("Page Loading Error:", error);
-            },
-            statusCode: this.errors[url.split("/")[1]],
-        });
-
-    }
-
-    request(url, $success) {
-        $.ajax({
-            url: url,
-            dataType: 'html',
-            success: $success,
-        });
-    }
-
-    final(result, url) {
-        // Other
-        this.pageLoaded = url.split("/");
-        this.active_page = "/" + this.pageLoaded[1];
-        $(this.fickle).html(result);
-    }
-
-    addPage(page_name, run) {
+    __addPage(page_name, run) {
         page_name = page_name.replace("/", "");
         this.pages[page_name] = run;
     }
 
-    __addPage(settings) {
+    addPage(settings) {
         settings.page = settings.page.replace("/", "");
         if ("ScrollInspector" in settings) {
             this.ScrollInspector[settings.page] = function () {
@@ -595,49 +608,6 @@ Sneekers.local.pages = class {
             $(this).find("a").removeClass(active_name);
             $(this).find("a[href='" + url + "']").addClass(active_name);
         });
-    }
-
-    notify(signal, message) {
-        var singals = {
-            error: 0,
-            warning: 50,
-            success: 100,
-        };
-        if (page.mobile.if) {
-            var values = {
-                bottom_start: "4em",
-                bottom_end: "-5em",
-            };
-        } else {
-            var values = {
-                bottom_start: "2em",
-                bottom_end: "-5em",
-            };
-        }
-
-        $(".notifier").animate({ bottom: values.bottom_start, }, 350);
-        $(".notifier__message").html(message);
-        $(".notifier__signal").css({
-            background: "hsl(" + singals[signal] + ", 50%, 40%)",
-        }).animate({
-            width: "100%",
-        }, 5000, "linear", function () {
-            $(".notifier").animate({ bottom: values.bottom_end, }, 350, () => $(this).css({ width: "" }));
-        });
-    }
-
-    notify_dev(type, result) {
-        if ($(".dev-log").length == 0) {
-            $("body").append(`<div class="dev-log"><div class="dev-log__header"><span>Request Response: </span><span class="js-dev-log-type"></span></div><pre class="dev-log__body js-dev-log-content"></pre></div>`);
-        }
-        var json = JSON.stringify(result, undefined, 2),
-            parsed_html = parse_html(json),
-            colored_html = color_html(json, parsed_html);
-
-        DOM.update("dev-log", {
-            type: type,
-            content: colored_html,
-        })
     }
 
     save_hash(hash) {
@@ -793,4 +763,8 @@ function IsDefined($this) {
 function img_error(element, isAvatar = false) {
     element.src = '/assets/img/guest.png';
     page.popup.tmp.NeedsToSetAvatar = isAvatar;
+}
+
+function undefined(variable) {
+    return variable == undefined;
 }

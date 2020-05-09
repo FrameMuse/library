@@ -17,14 +17,15 @@ class api extends Sneekers.domestic.api {
 
 class page extends Sneekers.local.pages {
     constructor(page) {
-        this.__addPage(page);
+        this.addPage(page);
     }
 }
 
 // Setup
 
 Sneekers.setup(function() {
-    //cache.clear();
+    // api.construct();
+    // cache.clear();
 });
 
 // Pages
@@ -58,14 +59,4 @@ api.send("/profile/load/page/1/0", {
 .get(function () {
     
 }); 
-
-api.get([
-    {
-        url: "/referal/save_promo",
-        data: {},
-        onSuccess: function () {
-
-        },
-    }
-]);
 
