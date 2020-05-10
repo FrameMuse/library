@@ -1,8 +1,8 @@
-export interface IntersectionAnimationData {
+interface IntersectionAnimationData {
     target: string,
-    TimingFunction: BezierType,
+    TimingFunction: Bezier,
     animation: {
-        from, to: {
+        maximum, minumum: {
             opacity?: number,
             "font-size"?: number
         },

@@ -1,0 +1,26 @@
+<body style="height: 500em; margin-top: 200;">
+    <div id="topbar" style="position: relative; width: 400; height: 400; background: rebeccapurple; color: white; font-size: 3em; font-weight: bold; display: flex; align-items: center; justify-content: center;">Текст значит</div>
+</body>
+<script src="../JavaScript/Cubic_Bezier.js"></script>
+<script src="../JavaScript/ScrollMovement.js"></script>
+<script>
+    new IntersectionAnimation({
+            target: "#topbar",
+            TimingFunction: new bezier(0, 0, 1, 1), // Linear
+            animation: {
+                minimum: {
+                    width: 125,
+                    // left: 0,
+                    opacity: 0.25
+                },
+                maximum: {
+                    width: 1200,
+                    // left: 200,
+                    opacity: 1
+                }
+            },
+            config: {
+                widthSuffix: "%",
+            }
+        });
+</script>
