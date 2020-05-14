@@ -1,15 +1,3 @@
-// Imports
-
-import { Bezier } from "Cubic_Bezier";
-import { IntersectionAnimationData } from "../interfaces";
-
-
-
-// Types
-
-// type BezierType = Bezier;
-
-
 
 // Dev Staff
 
@@ -29,7 +17,7 @@ class AdvancedIntersectionObserver {
             entries.forEach(entry => {
                 if (!entry.isIntersecting) return;
                 AdvancedObserverCallback(entry, observer);
-                console.log(entry.intersectionRatio);
+                console.table([entry.intersectionRatio, entry.intersectionRect]);
                 
             });
         }
@@ -49,17 +37,22 @@ class IntersectionAnimation {
     animation: {
         minimum, maximum: object,
     }
+    config: {
+        suffixes: object
+    }
 
     constructor(data: IntersectionAnimationData) {
         this.timing = data.TimingFunction;
         this.animation = data.animation;
+        this.config = data.config;
         // Destructed data
-        const { target, animation } = data;
+        const { area, target, animation } = data;
         // Constants
-        const element = document.querySelector(target);
-        const Observer = new AdvancedIntersectionObserver(element, {
+        const Area = document.querySelector(area);
+        const Target = document.querySelector(target);
+        const Observer = new AdvancedIntersectionObserver(Area, {
             root: null,
-            threshold: Array(1001).fill(0).map((value, index) => index / 1000)
+            threshold: Array(101).fill(0).map((v, i) => i / 100)
         });
         // Advanced Observer
         Observer.setCallback(entry => {
@@ -68,12 +61,12 @@ class IntersectionAnimation {
             // Animation params adjustment
             entry.intersectionRatio;
             // Redering
-            this.RenderFrame(element, this.animation.maximum, entry.intersectionRatio);
+            this.RenderFrame(Target, this.animation.maximum, entry.intersectionRatio);
         });
         // Animation params
         animation.from;
         // Set default animation params
-        this.RenderFrame(element, this.animation.minimum, 1); // 1 == 100% percent (adjustment)
+        this.RenderFrame(Target, this.animation.minimum, 1); // 1 == 100% percent (adjustment)
     }
 
     RenderFrame(target: Element, params: object, adjustment: number) {
@@ -82,10 +75,35 @@ class IntersectionAnimation {
             const AdjustedTiming = this.timing(adjustment);
             const valueAdjusted = value * AdjustedTiming;
 
-            if (value < this.animation.minimum[param]) continue;
-            if (value > this.animation.maximum[param]) continue;
+            //if (valueAdjusted < this.animation.minimum[param]) continue;
+            if (valueAdjusted > this.animation.maximum[param]) continue;
 
-            target.style[param] = valueAdjusted;
+            switch (param) {
+                case "width":
+                case "height":
+                    const govno = value * (1 - AdjustedTiming);
+                    if (govno < this.animation.minimum[param]) continue;
+                    target.style[param] = govno;
+                    break;
+                case "background":
+                case "color":
+                    const rgba = value.map(v => v * (1 - AdjustedTiming));
+                    target.style[param] = `rgba(${rgba})`;
+                    break;
+                case "transform":
+                    var transforms = "";
+                    for (const style in value) {
+                        const element = value[style] * AdjustedTiming;
+                        const suffix = this.config.suffixes[style];
+                        transforms += `${style}(${element + suffix})`;
+                    }
+                    target.style[param] = transforms;
+                    break;
+            
+                default:
+                    target.style[param] = valueAdjusted;
+                    break;
+            }
         }
         // jQuery method
         // $(target).css(params);

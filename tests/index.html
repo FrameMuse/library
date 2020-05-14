@@ -1,26 +1,65 @@
-<body style="height: 500em; margin-top: 200;">
-    <div id="topbar" style="position: relative; width: 400; height: 400; background: rebeccapurple; color: white; font-size: 3em; font-weight: bold; display: flex; align-items: center; justify-content: center;">Текст значит</div>
+<body>
+    <head>
+        <style>
+            *, ::after, ::before {
+                position: relative;
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                height: 500em;
+                /* margin-top: 200px; */
+                /* background: url("C:/Users/mrxom/Desktop/space-wallpaper-6.jpg"); */
+            }
+
+            .wrapper {
+                width: 400px;
+                height: 400px;
+                border: 20px solid rebeccapurple;
+            }
+
+            .topbar {
+                position: fixed;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 360px;
+                height: 360px;
+                color: rebeccapurple;
+                font-size: 3em;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <div class="wrapper">
+        <div class="topbar">Текст значит</div>
+    </div>
 </body>
 <script src="../JavaScript/Cubic_Bezier.js"></script>
 <script src="../JavaScript/ScrollMovement.js"></script>
 <script>
     new IntersectionAnimation({
-            target: "#topbar",
-            TimingFunction: new bezier(0, 0, 1, 1), // Linear
-            animation: {
-                minimum: {
-                    width: 125,
-                    // left: 0,
-                    opacity: 0.25
-                },
-                maximum: {
-                    width: 1200,
-                    // left: 200,
-                    opacity: 1
-                }
+        area: ".wrapper",
+        target: ".topbar",
+        TimingFunction: new bezier(0.35, 0.35, 0.65, 1), // Linear
+        animation: {
+            minimum: {
+                width: 360,
+                height: 360,
             },
-            config: {
-                widthSuffix: "%",
+            maximum: {
+                bottom: 350,
+                width: 500,
+                height: 500,
+                background: [0, 0, 0, 1]
             }
-        });
+        },
+        config: {
+            suffixes: {
+                translateY: "px"
+            }
+        }
+    });
 </script>
